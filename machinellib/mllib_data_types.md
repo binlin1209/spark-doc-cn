@@ -91,13 +91,19 @@ _Sparse data_
 
 It is very common in practice to have sparse training data. MLlib supports reading training examples stored in LIBSVM format, which is the default format used by LIBSVM and LIBLINEAR. It is a text format in which each line represents a labeled sparse feature vector using the following format:
 
+在实践中用到稀疏训练模型是很常见的。MLlib支持以LIBSVM的格式来读取训练数据，这是使用LIBSVM和LIBLINEAR的默认格式。这是一种文本格式，每一行代表了一个标记的稀疏特征向量。
+
 	label index1:value1 index2:value2 ...
 	
 where the indices are one-based and in ascending order. After loading, the feature indices are converted to zero-based.
 
+索引是一个以一为基础的，递增的顺序。加载过后，特征索引转变为以0为基础的索引。
+
 ### python
 
 MLUtils.loadLibSVMFile reads training examples stored in LIBSVM format.
+
+MLUtils.loadLibSVMFile读取存储在LIBSVM格式中的训练样本
 
 	from pyspark.mllib.util import MLUtils
 	
@@ -115,9 +121,13 @@ A local matrix has integer-typed row and column indices and double-typed values,
 
 is stored in a one-dimensional array [1.0, 3.0, 5.0, 2.0, 4.0, 6.0] with the matrix size (3, 2).
 
+一个本地的矩阵拥有一个整数型的行和列索引和double型的值，这些数据都存储在单机中。MLlib支持稠密矩阵，它们的进入值都存储在一个double型的排好序的数组中，稀疏矩阵，它们的非零进入值存储在压缩稀疏列中，以列为基的顺序排列。例如下面的稠密矩阵存储在一维数组中，且矩阵大小为(3, 2)。
+
 ### python
 
 The base class of local matrices is Matrix, and we provide two implementations: DenseMatrix, and SparseMatrix. We recommend using the factory methods implemented in Matrices to create local matrices. Remember, local matrices in MLlib are stored in column-major order.
+
+当地的矩阵是矩阵的基类，我们提供了两种实施方式：稠密矩阵和稀疏矩阵。我们推荐使用代理方法来创建本地矩阵。记住，在MLlib中，本地矩阵是储存在以列为主的序列中的。
 
 	import org.apache.spark.mllib.linalg.{Matrix, Matrices}
 	
@@ -131,19 +141,32 @@ The base class of local matrices is Matrix, and we provide two implementations: 
 
 A distributed matrix has long-typed row and column indices and double-typed values, stored distributively in one or more RDDs. It is very important to choose the right format to store large and distributed matrices. Converting a distributed matrix to a different format may require a global shuffle, which is quite expensive. Three types of distributed matrices have been implemented so far.
 
+一个分布式的矩阵有长的行和列索引，double型的值，分布式的储存在一个或多个RDDs数据集中。选择正确的形式来储存大的和分布式的矩阵是很重要的。转变一个分布式的矩阵变成不同的形式可能需要一个全局的shuffle，这是很重要的。转变一个分布式的矩阵为一个不同的形式可能需要一个全局的shuffle，这是很昂贵的。
+
 The basic type is called RowMatrix. A RowMatrix is a row-oriented distributed matrix without meaningful row indices, e.g., a collection of feature vectors. It is backed by an RDD of its rows, where each row is a local vector. We assume that the number of columns is not huge for a RowMatrix so that a single local vector can be reasonably communicated to the driver and can also be stored / operated on using a single node. An IndexedRowMatrix is similar to a RowMatrix but with row indices, which can be used for identifying rows and executing joins. A CoordinateMatrix is a distributed matrix stored in coordinate list (COO) format, backed by an RDD of its entries.
+
+这个主要类型被称为行矩阵。一个行矩阵是一个以行为方向分布的矩阵，但是并没有有意义的行索引。例如：一个有特色的向量集合。这个被RDD的行所备份，每一行都是一个本地向量。我们假定列的数目并没有大到容纳一个行矩阵，所以一个本地向量可以合理的与驱动程序进行交互，也能够在单个节点上进行储存和操作。一个索引行矩阵是和行矩阵类似的，但是对于行索引，也能够用来识别行和执行交点。一个坐标矩阵是一个分布式的矩阵，以坐标列表(COO)形式存储的，备份在RDD的入口中。
 
 _Note_
 
 The underlying RDDs of a distributed matrix must be deterministic, because we cache the matrix size. In general the use of non-deterministic RDDs can lead to errors.
 
+底层的抽样分布矩阵必须是确定的，因为我们缓存矩阵的大小。通常来讲，使用非决定的RDDs会导致错误。
+
+
+
 ## RowMatrix
 
 A RowMatrix is a row-oriented distributed matrix without meaningful row indices, backed by an RDD of its rows, where each row is a local vector. Since each row is represented by a local vector, the number of columns is limited by the integer range but it should be much smaller in practice.
 
+一个行矩阵是一个以行为基的分布式矩阵，但是并没有丰富的行索引，其备份在RDD的行中，每一行都是一个本地向量。因为每一行都代表一个本地向量，列的数目被整数的范围限制了，但是在实践中这个情况出现应该非常小。
+
+
 ### python
 
 A RowMatrix can be created from an RDD of vectors.
+
+一个行矩阵能够被一个RDD向量所创建。
 
 	from pyspark.mllib.linalg.distributed import RowMatrix
 	
@@ -164,9 +187,13 @@ A RowMatrix can be created from an RDD of vectors.
 
 An IndexedRowMatrix is similar to a RowMatrix but with meaningful row indices. It is backed by an RDD of indexed rows, so that each row is represented by its index (long-typed) and a local vector.
 
+一个索引行矩阵和一个有丰富行索引的行矩阵是类似的。它被一个RDD行索引所备份，所以每一行都可以用一个索引和一个本地向量所代表。
+
 ### python
 
 An IndexedRowMatrix can be created from an RDD of IndexedRows, where IndexedRow is a wrapper over (long, vector). An IndexedRowMatrix can be converted to a RowMatrix by dropping its row indices.
+
+一个索引行矩阵能够从一个RDD的索引行中创建，索引行包裹着向量。一个索引行矩阵能够转化一个行矩阵通过放弃它的行索引。
 
 from pyspark.mllib.linalg.distributed import IndexedRow, IndexedRowMatrix
 	
@@ -204,9 +231,13 @@ from pyspark.mllib.linalg.distributed import IndexedRow, IndexedRowMatrix
 
 A CoordinateMatrix is a distributed matrix backed by an RDD of its entries. Each entry is a tuple of (i: Long, j: Long, value: Double), where i is the row index, j is the column index, and value is the entry value. A CoordinateMatrix should be used only when both dimensions of the matrix are huge and the matrix is very sparse.
 
+一个坐标矩阵就是一个分布式的备份在RDD条目中的矩阵。每一个条目都是一个元组（i: Long, j: Long, value: Double），并且i 是行索引，j是列索引，value是条目的值。一个坐标矩阵应该能够使用，当矩阵的所有维度都足够大时，矩阵是很稀疏。
+
 ### python
 
 A CoordinateMatrix can be created from an RDD of MatrixEntry entries, where MatrixEntry is a wrapper over (long, long, float). A CoordinateMatrix can be converted to a RowMatrix by calling toRowMatrix, or to an IndexedRowMatrix with sparse rows by calling toIndexedRowMatrix.
+
+一个坐标矩阵能够从一个RDD的矩阵条目中创建，并且矩阵条目是裹起来的。一个坐标矩阵能够转化为一个行矩阵，这称为toRowMatrix，如果转化为一个稀疏行索引矩阵，这称为toIndexedRowMatrix。
 
 	from pyspark.mllib.linalg.distributed import CoordinateMatrix, MatrixEntry
 	
@@ -239,9 +270,13 @@ A CoordinateMatrix can be created from an RDD of MatrixEntry entries, where Matr
 
 A BlockMatrix is a distributed matrix backed by an RDD of MatrixBlocks, where a MatrixBlock is a tuple of ((Int, Int), Matrix), where the (Int, Int) is the index of the block, and Matrix is the sub-matrix at the given index with size rowsPerBlock x colsPerBlock. BlockMatrix supports methods such as add and multiply with another BlockMatrix. BlockMatrix also has a helper function validate which can be used to check whether the BlockMatrix is set up properly.
 
+一个块矩阵是一个备份的RDD分布式矩阵，矩阵块是一个元组，整数是矩阵块的索引，在给定的索引下，矩阵是子矩阵。块矩阵支持若干种方法，例如添加或者乘以另一个块矩阵。块矩阵也有一个帮助函数，也可以用来检测块矩阵是否设置正确。
+
 ### python
 
 A BlockMatrix can be created from an RDD of sub-matrix blocks, where a sub-matrix block is a ((blockRowIndex, blockColIndex), sub-matrix) tuple.
+
+块矩阵能够从一个RDD的子矩阵创建，哪里一个子矩阵就是一个元组。
 
 	from pyspark.mllib.linalg import Matrices
 	from pyspark.mllib.linalg.distributed import BlockMatrix
